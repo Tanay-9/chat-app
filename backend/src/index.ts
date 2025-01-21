@@ -8,6 +8,8 @@ wss.on("connection", (socket) => {
 
   socket.send("connected");
 
+    socket.on("error" , console.error)
+
   //   socket.on("message" ,(e) => {
   //     const message = JSON.parse(e.toString());
   //     wss.clients.forEach(function each (client) {
@@ -37,6 +39,7 @@ wss.on("connection", (socket) => {
       } else {
         const clients = roomData.get(message.payload.roomCode);
         if (!clients.has(socket)) {
+            
           socket.send(
             "you're not a member of this room, join room first inorder to chat here"
           );

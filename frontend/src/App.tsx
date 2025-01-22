@@ -22,7 +22,8 @@ function App() {
   }
 
   useEffect(() => {
-    const ws = new WebSocket(import.meta.env.SOCKET_URL);
+
+    const ws = new WebSocket(import.meta.env.VITE_SOCKET_URL);
 
     ws.onopen = () => {
       console.log("Connected to WebSocket server");

@@ -22,7 +22,7 @@ function App() {
   }
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8080");
+    const ws = new WebSocket(import.meta.env.SOCKET_URL);
 
     ws.onopen = () => {
       console.log("Connected to WebSocket server");

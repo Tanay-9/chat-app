@@ -1,5 +1,19 @@
-import WebSocket, { WebSocketServer } from "ws";
-const wss = new WebSocketServer({ port: 8081 });
+
+
+import WebSocket, { WebSocketServer,VerifyClientCallbackSync } from "ws";
+const PORT = Number(process.env.PORT) || 8080
+const wss = new WebSocketServer({
+  port: PORT,
+  verifyClient: ((info: { origin: string | undefined }) => {
+    if (!info.origin) return false;
+    const allowedOrigins = [
+      process.env.FE_URL,
+      'http://localhost:3000',
+    ];
+    return allowedOrigins.includes(info.origin);
+  }) as VerifyClientCallbackSync
+});
+
 const roomData = new Map();
 
 wss.on("connection", (socket) => {

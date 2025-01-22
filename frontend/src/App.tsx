@@ -22,7 +22,7 @@ function App() {
   }
 
   useEffect(() => {
-
+    // console.log(import.meta.env.VITE_SOCKET_URL);
     const ws = new WebSocket(import.meta.env.VITE_SOCKET_URL);
 
     ws.onopen = () => {

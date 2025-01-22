@@ -46,8 +46,8 @@ wss.on("connection", (socket) => {
             "you're not a member of this room, join room first inorder to chat here"
           );
         } else {
-          //@ts-ignore
-          clients.forEach((client) => {
+          
+          clients.forEach((client : WebSocket) => {
             if (client.readyState === WebSocket.OPEN) {
                 const tobeSent = {
                  content : message.payload.content,

@@ -1,7 +1,10 @@
 
 
 import WebSocket, { WebSocketServer,VerifyClientCallbackSync } from "ws";
-const PORT = Number(process.env.PORT) || 8080
+require('dotenv').config();
+
+const PORT = Number(process.env.PORT) || 8081
+
 const wss = new WebSocketServer({
   port: PORT,
   verifyClient: ((info: { origin: string | undefined }) => {

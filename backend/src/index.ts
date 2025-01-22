@@ -6,18 +6,11 @@ const roomData = new Map();
 wss.on("connection", (socket) => {
   console.log("connect successfully");
 
-  socket.send("connected");
+
 
     socket.on("error" , console.error)
 
-  //   socket.on("message" ,(e) => {
-  //     const message = JSON.parse(e.toString());
-  //     wss.clients.forEach(function each (client) {
-  //         if(client !== socket && client.readyState === WebSocket.OPEN) {
-  //             client.send("the data sent was " + JSON.stringify(message));
-  //         }
-  //     })
-  //   })
+
 
   socket.on("message", (e) => {
     const message = JSON.parse(e.toString());
@@ -30,7 +23,16 @@ wss.on("connection", (socket) => {
 
       roomData.get(message.payload.roomCode).add(socket);
 
-      socket.send(`a new user join the room`);
+      const clients = roomData.get(message.payload.roomCode);
+      clients.forEach((client : WebSocket) => {
+        if(client !== socket && client.readyState === WebSocket.OPEN) {
+         const tobeSent =  {content : "a new user joined",
+          userName :  message.payload.userName,
+          type : message.type}
+
+          client.send(JSON.stringify(tobeSent))
+        }
+      })
     }
 
     if (message.type === "chat") {
@@ -46,10 +48,13 @@ wss.on("connection", (socket) => {
         } else {
           //@ts-ignore
           clients.forEach((client) => {
-            if (client !== socket && client.readyState === WebSocket.OPEN) {
-                // const tobeSent = message.payload.content.s
-              client.send(
-                message.payload.content
+            if (client.readyState === WebSocket.OPEN) {
+                const tobeSent = {
+                 content : message.payload.content,
+                 userName :  message.payload.userName,
+                 type : message.type
+                }
+              client.send(JSON.stringify(tobeSent)
               );
             }
           });

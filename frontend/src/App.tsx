@@ -1,24 +1,29 @@
 import { useState, useRef, useTransition, useEffect } from "react";
+import { Toaster,toast } from "sonner";
 
 function App() {
   const [join, setJoin] = useState(false);
   const [create, setCreate] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [generatedCode, setCode] = useState("");
-  const [message,setMessage] = useState([]); 
+  const [message, setMessage] = useState<Message[]>([]);
   const [userName, setUserName] = useState("");
   const [roomCode, setRoomCode] = useState("");
-  const [wsConnection, setWsConnection] = useState(null);
-  
+  const [wsConnection, setWsConnection] = useState<WebSocket | null>(null);
 
-  const nameRef = useRef();
-  const roomCodeRef = useRef();
-  const messageRef = useRef();
+  const nameRef = useRef<HTMLInputElement>(null);
+  const roomCodeRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLInputElement>(null);
 
+  interface Message {
+    userName : string;
+    content : string;
+    type : string;
+  }
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8080");
-    
+
     ws.onopen = () => {
       console.log("Connected to WebSocket server");
       setWsConnection(ws);
@@ -26,7 +31,10 @@ function App() {
 
     ws.onmessage = (event) => {
       console.log(event);
-      setMessage(prev => [...prev, event.data]);
+      const current = JSON.parse(event.data)
+      if(current.type === "join") toast.success(current.content)
+      else
+      setMessage((prev) => [...prev, current]);
     };
 
     ws.onerror = (error) => {
@@ -40,63 +48,77 @@ function App() {
     return () => {
       ws.close();
     };
-  }, []); 
+  }, []);
 
   const createRoom = () => {
     startTransition(() => {
       const generatedCode = Math.random().toString(36).substring(2, 10);
       setCode(generatedCode);
       setCreate(true);
+
+      console.log(generatedCode);
     });
   };
 
   const joinRoom = () => {
-    const name = nameRef.current.value.trim();
-    const code = roomCodeRef.current.value.trim();
-  
+    const name = nameRef.current?.value.trim();
+    const code = roomCodeRef.current?.value.trim();
+
     if (!name || !code) {
       alert("Please fill out both fields.");
       return;
     }
-  
+
     setUserName(name);
-    setRoomCode(code);
-    
-    if (wsConnection) {
-      wsConnection.send(JSON.stringify({
-        type: "join",
-        payload: {
-          roomCode: code,
-          userName: name
-        }
-      }));
-    }
-    
-    setJoin(true);
-    nameRef.current.value = "";
-    roomCodeRef.current.value = "";
-  };
+    localStorage.setItem("username", name);
   
-  const sendMessage = (e) => {
+    setRoomCode(code);
+
+    if (wsConnection) {
+      wsConnection.send(
+        JSON.stringify({
+          type: "join",
+          payload: {
+            roomCode: code,
+            userName: name,
+          
+          },
+        })
+      );
+    }
+
+    setJoin(true);
+    if (nameRef.current) nameRef.current.value = "";
+    if (roomCodeRef.current) roomCodeRef.current.value = ""; 
+
+  };
+
+  const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    const content = messageRef.current.value.trim();
-    
+    const content = messageRef?.current?.value.trim();
+
     if (!content || !wsConnection) return;
 
-    wsConnection.send(JSON.stringify({
-      type: "chat",
-      payload: {
-        roomCode,
-        userName,
-        content
-      }
-    }));
+    wsConnection.send(
+      JSON.stringify({
+        type: "chat",
+        payload: {
+          roomCode,
+          userName,
+          content,
+        },
+      })
+    );
 
-    messageRef.current.value = "";
+    if (messageRef.current) messageRef.current.value = "";
+   
   };
 
-
   return (
+    <>
+   <div>
+    <Toaster richColors/>
+   
     <main className="bg-[#121212] h-screen flex items-center justify-center">
       <div className="container mx-auto px-6 py-4 max-w-2xl">
         <div className="h-auto flex flex-col border border-white/40 rounded-lg px-6 py-4 shadow-lg">
@@ -119,66 +141,80 @@ function App() {
             )}
           </header>
           {join && (
-            <section className="flex-1 overflow-y-auto">
-              {
-                message.length === 0 ? (
-                  <p className="text-gray-400 italic">No messages yet...</p>
-                ) : 
-                (
-                  <div className="space-y-2">
-                    {message.map((msg,index) => (
-                      <div key={index} className="bg-[#1e1e1e] rounded-lg p-2 text-white">
-                        {msg}
-                        </div>
-                    ))}
-                  </div>
-                )
-              }
-              
+            <section className="flex-1 max-h-[500px] overflow-y-auto">
+              {message.length === 0 ? (
+                <p className="text-gray-400 italic">No messages yet...</p>
+              ) : (
+                <div className="space-y-2">
+                  {message.map((msg : Message, index : number) => (
+                    <div
+                      key={index}
+                      className={`rounded-lg p-2 ${
+                        msg.userName === userName
+                          ? "bg-blue-500 ml-4"
+                          : "bg-[#1e1e1e] mr-4"
+                      }`}
+                    >
+                      {msg.userName !== userName && (
+                        <p className="text-xs text-gray-400 mb-1">
+                          {msg.userName}
+                        </p>
+                      )}
+                      <p className="text-white">{msg.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
           <footer className="mt-4 grid grid-cols-3 items-center">
-            {!join ?
-             (
+            {!join ? (
               <>
-              
                 <input
-                ref={nameRef}
-                type="text"
-                placeholder="Enter your name"
-                className="p-2 border-white/45 border rounded-lg bg-[#1e1e1e] text-white placeholder-gray-500 col-span-full mb-4"
-              />
-            
-            
-            <input
-              ref={roomCodeRef}
-              type="text"
-              placeholder="Enter the room code"
-              className="p-2 col-span-2 border rounded-lg bg-[#1e1e1e] text-white placeholder-gray-500"
-            />
-            <button className="ml-2 w-full text-white bg-blue-800 hover:opacity-80 rounded-lg p-2" onClick={joinRoom}>
-              Join Room
-            </button>
-            </>
-             ) : (
-              <>  
-              <form onSubmit={sendMessage}>
-                    <input ref = {messageRef}
+                  ref={nameRef}
+                  type="text"
+                  placeholder="Enter your name"
+                  className="p-2 border-white/45 border rounded-lg bg-[#1e1e1e] text-white placeholder-gray-500 col-span-full mb-4"
+                />
+
+                <input
+                  ref={roomCodeRef}
+                  type="text"
+                  placeholder="Enter the room code"
+                  className="p-2 col-span-2 border rounded-lg bg-[#1e1e1e] text-white placeholder-gray-500"
+                />
+                <button
+                  className="ml-2 w-full text-white bg-blue-800 hover:opacity-80 rounded-lg p-2"
+                  onClick={joinRoom}
+                >
+                  Join Room
+                </button>
+              </>
+            ) : (
+              <>
+                <form onSubmit={sendMessage}>
+                  <input
+                    ref={messageRef}
                     type="text"
                     placeholder="Type your message"
                     className="flex-1 p-2 border rounded-lg bg-[#1e1e1e] text-white placeholder-gray-500"
-                    />
-                    <button type="submit" className="px-4 text-white bg-blue-800 hover:opacity-80">
-                        Send
-                    </button> 
-              </form>
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 text-white bg-blue-800 hover:opacity-80"
+                  >
+                    Send
+                  </button>
+                </form>
               </>
-             )}
+            )}
           </footer>
         </div>
       </div>
     </main>
+    </div>
+    </>
   );
 }
 

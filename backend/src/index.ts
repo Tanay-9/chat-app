@@ -25,12 +25,16 @@ server.listen(PORT,"0.0.0.0",() => {
   console.log(`Websocket is listening on port ${PORT}`)
 })
 
-server.on("request",(req,res) => {
-  if(req.url === "/health") {
+server.on("request", (req, res) => {
+  if (req.url === "/health") {
     res.writeHead(200);
     res.end("OK");
+  } else {
+    
+    res.writeHead(200);
+    res.end("WebSocket server is running");
   }
-})
+});
 const roomData = new Map();
 console.log("Websocket is running");
 

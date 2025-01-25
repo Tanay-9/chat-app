@@ -1,23 +1,38 @@
-
-
+import http from "http"
 import WebSocket, { WebSocketServer,VerifyClientCallbackSync } from "ws";
 require('dotenv').config();
 
-const PORT = Number(process.env.PORT) || 8081
 
+const PORT = Number(process.env.PORT) || 8081
+const server = http.createServer();
 const wss = new WebSocketServer({
-  port: PORT,
-  verifyClient: ((info: { origin: string | undefined }) => {
-    if (!info.origin) return false;
+  server,
+  verifyClient: ((info) => {
+
+    const origin = info.origin || info.req.headers.origin;
+
+    console.log("Origin", origin)
+ 
     const allowedOrigins = [
       process.env.FE_URL,
-      'http://localhost:3000',
+      'http://localhost:5173',
     ];
-    return allowedOrigins.includes(info.origin);
+    return allowedOrigins.includes(origin);
   }) as VerifyClientCallbackSync
 });
 
+server.listen(PORT,"0.0.0.0",() => {
+  console.log(`Websocket is listening on port ${PORT}`)
+})
+
+server.on("request",(req,res) => {
+  if(req.url === "/health") {
+    res.writeHead(200);
+    res.end("OK");
+  }
+})
 const roomData = new Map();
+console.log("Websocket is running");
 
 wss.on("connection", (socket) => {
   console.log("connect successfully");

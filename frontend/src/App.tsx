@@ -51,12 +51,19 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const chatContainer = document.querySelector(".overflow-y-auto")
+    if(chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  },[message])
+  
   const createRoom = () => {
     startTransition(() => {
       const generatedCode = Math.random().toString(36).substring(2, 10);
       setCode(generatedCode);
       setCreate(true);
-
+      setJoin(false);
       console.log(generatedCode);
     });
   };
@@ -66,7 +73,7 @@ function App() {
     const code = roomCodeRef.current?.value.trim();
 
     if (!name || !code) {
-      alert("Please fill out both fields.");
+    toast.error("please fill both the fields")
       return;
     }
 
@@ -89,6 +96,8 @@ function App() {
     }
 
     setJoin(true);
+    setCreate(true);
+    setCode(code);
     if (nameRef.current) nameRef.current.value = "";
     if (roomCodeRef.current) roomCodeRef.current.value = ""; 
 
@@ -115,6 +124,10 @@ function App() {
    
   };
 
+  const refreshHandler = () => {
+    setJoin(false);
+    setCreate(false);
+  }
   return (
     <>
    <div>
@@ -124,13 +137,13 @@ function App() {
       <div className="container mx-auto px-6 py-4 max-w-2xl">
         <div className="h-auto flex flex-col border border-white/40 rounded-lg px-6 py-4 shadow-lg">
           <header className="mb-4 flex flex-col space-y-4">
-            <h1 className="text-2xl tracking-widest text-white font-thin">
+            <h1 className="text-2xl tracking-widest text-white font-thin cursor-pointer" onClick={refreshHandler}>
               Real-time Chat
             </h1>
-            {(!create || !join) && (
-              <div className="w-full bg-white hover:opacity-80 text-center rounded-lg p-2 text-xl font-light cursor-pointer">
-                <button onClick={createRoom} disabled={isPending}>
-                  {isPending ? "Generating..." : "Create a room"}
+            {(create || !join) && (
+              <div className="">
+                <button className="w-full bg-white hover:opacity-80 text-center rounded-lg p-2 text-xl font-light cursor-pointer" onClick={createRoom} disabled={isPending}>
+                  {isPending ? "Generating..." : "Create a new room"}
                 </button>
               </div>
             )}
@@ -142,7 +155,7 @@ function App() {
             )}
           </header>
           {join && (
-            <section className="flex-1 max-h-[500px] overflow-y-auto">
+            <section className="h-64 overflow-y-auto mb-4">
               {message.length === 0 ? (
                 <p className="text-gray-400 italic">No messages yet...</p>
               ) : (
@@ -194,16 +207,16 @@ function App() {
               </>
             ) : (
               <>
-                <form onSubmit={sendMessage}>
+                <form onSubmit={sendMessage} className="col-span-3 grid grid-cols-3">
                   <input
                     ref={messageRef}
                     type="text"
                     placeholder="Type your message"
-                    className="flex-1 p-2 border rounded-lg bg-[#1e1e1e] text-white placeholder-gray-500"
+                    className="p-2 border rounded-lg bg-[#1e1e1e] col-span-2 text-white placeholder-gray-500"
                   />
                   <button
                     type="submit"
-                    className="px-4 text-white bg-blue-800 hover:opacity-80"
+                    className="px-4 text-white bg-blue-800 rounded-xl hover:opacity-80 ml-2"
                   >
                     Send
                   </button>

@@ -24,6 +24,7 @@ function App() {
   useEffect(() => {
     console.log(import.meta.env.VITE_SOCKET_URL);
     const ws = new WebSocket(import.meta.env.VITE_SOCKET_URL);
+    
    
     ws.onopen = () => {
       console.log("Connected to WebSocket server");
@@ -31,10 +32,28 @@ function App() {
     };
 
     ws.onmessage = (event) => {
-      console.log(event);
+    
       const current = JSON.parse(event.data)
-      if(current.type === "join") toast.success(current.content)
-      else
+      if(current.type === "join") {
+        if(current.exist) {
+          toast.success(current.content);
+        
+          setCreate(true);
+          setJoin(true);
+        }
+        else {
+          toast.error("wrong room code");
+          setJoin(false);
+        }
+       
+      }
+     
+      else if(current.type === "create") {
+        setCode(current.content.roomCode);
+        setCreate(true)
+       
+      }
+      else 
       setMessage((prev) => [...prev, current]);
     };
 
@@ -60,11 +79,17 @@ function App() {
   
   const createRoom = () => {
     startTransition(() => {
-      const generatedCode = Math.random().toString(36).substring(2, 10);
-      setCode(generatedCode);
-      setCreate(true);
-      setJoin(false);
-      console.log(generatedCode);
+      if (wsConnection) {
+        
+        wsConnection.send(
+          JSON.stringify({
+            type: "create",
+            payload: {
+              userName: name,
+            },
+          })
+        );
+      }
     });
   };
 
@@ -81,7 +106,7 @@ function App() {
     localStorage.setItem("username", name);
   
     setRoomCode(code);
-
+     setCode(code);
     if (wsConnection) {
       wsConnection.send(
         JSON.stringify({
@@ -95,9 +120,9 @@ function App() {
       );
     }
 
-    setJoin(true);
-    setCreate(true);
-    setCode(code);
+    // setJoin(true);
+    // setCreate(true);
+   
     if (nameRef.current) nameRef.current.value = "";
     if (roomCodeRef.current) roomCodeRef.current.value = ""; 
 

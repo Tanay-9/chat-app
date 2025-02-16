@@ -9,18 +9,18 @@ const server = http.createServer();
 const wss = new WebSocketServer({
   server,
  
-  // verifyClient: ((info) => {
+  verifyClient: ((info) => {
 
-  //   const origin = info.origin || info.req.headers.origin;
+    const origin = info.origin || info.req.headers.origin;
 
-  //   console.log("Origin", origin)
+    console.log("Origin", origin)
  
-  //   const allowedOrigins = [
-  //     process.env.FE_URL,
-  //     'http://localhost:5173',
-  //   ];
-  //   return allowedOrigins.includes(origin);
-  // }) as VerifyClientCallbackSync
+    const allowedOrigins = [
+      process.env.FE_URL,
+      'http://localhost:5173',
+    ];
+    return allowedOrigins.includes(origin);
+  }) as VerifyClientCallbackSync
 });
 
 server.listen(PORT,"0.0.0.0",() => {
